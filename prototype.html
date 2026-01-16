@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcend - Privacy Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        /* Updated color palette to softer greens and purples with neutrals */
+        :root{
+            --primary:#5F5BF7;
+            --primary-light:#BFBDFC;
+            --purple:#5F5BF7;
+            --green:#D8FB4B;
+            --green-light:#EFFDB7;
+            --black:#0a0a0a;
+            --dark:#1a1a1a;
+            --gray:#a0a0a0;
+            --light:#c0c0c0;
+            --white:#fff;
+            --overlay10:rgba(255,255,255,.1);
+            --overlay03:rgba(255,255,255,.03);
+            --overlay05:rgba(255,255,255,.05);
+            --gradient:linear-gradient(135deg,#5F5BF7 0%,#BFBDFC 100%);
+            --border:rgba(255,255,255,.08);
+            --success:#10b981;
+            --warning:#f59e0b;
+            --danger:#ef4444;
+            --sidebar:260px;
+            --header:64px;
+            --accent:#EFFDB7
+        }
+        body{font-family:'DM Sans',sans-serif;background:var(--black);color:var(--white);line-height:1.6;overflow:hidden;height:100vh}
+        .app{display:flex;height:100vh}
+        .sidebar{width:var(--sidebar);height:100vh;background:var(--black);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100}
+        .sidebar-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;min-height:var(--header)}
+        .logo-mark{width:32px;height:32px;background:var(--gradient);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+        .logo-text{font-size:18px;font-weight:600;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:16px 0}
+        .sidebar-nav::-webkit-scrollbar{width:4px}
+        .sidebar-nav::-webkit-scrollbar-thumb{background:var(--overlay10);border-radius:4px}
+        .nav-home{padding:0 12px;margin-bottom:8px}
+        .nav-home-link{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--white);text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;position:relative}
+        .nav-home-link:hover{background:var(--overlay05)}
+        .nav-home-link.active{background:var(--overlay10)}
+        .nav-home-link.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--gradient);border-radius:0 4px 4px 0}
+        .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;opacity:.7}
+        .nav-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .nav-divider{height:1px;background:var(--border);margin:12px 24px}
+        .nav-section{padding:0 12px;margin-bottom:4px}
+        .nav-section-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;color:var(--gray);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer}
+        .nav-section-header:hover{background:var(--overlay03);color:var(--light)}
+        .nav-section-header-content{display:flex;align-items:center;gap:10px}
+        .section-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+        .section-icon svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .collapse-icon{width:16px;height:16px;transition:transform .2s}
+        .collapse-icon svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+        .nav-section.collapsed .collapse-icon{transform:rotate(-90deg)}
+        .nav-sub-items{overflow:hidden;transition:max-height .25s,opacity .2s;max-height:500px;opacity:1}
+        .nav-section.collapsed .nav-sub-items{max-height:0;opacity:0}
+        .nav-sub-link{display:flex;align-items:center;padding:8px 12px 8px 40px;border-radius:6px;color:var(--light);font-size:14px;cursor:pointer;position:relative}
+        .nav-sub-link:hover{background:var(--overlay05);color:var(--white)}
+        .nav-sub-link.active{background:var(--overlay10);color:var(--white)}
+        .nav-sub-link.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--gradient);border-radius:0 4px 4px 0}
+        .sidebar-footer{padding:16px 12px;border-top:1px solid var(--border)}
+        .invite-btn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;background:var(--overlay05);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;font-weight:500;cursor:pointer}
+        .invite-btn:hover{background:var(--overlay10)}
+        .invite-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .main-wrapper{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;height:100vh;background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 100%)}
+        .main-header{height:var(--header);padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(10,10,10,.8);backdrop-filter:blur(12px)}
+        .header-breadcrumb{display:flex;align-items:center;gap:8px;font-size:14px}
+        .breadcrumb-section{color:var(--gray)}
+        .breadcrumb-separator{color:var(--gray);opacity:.5}
+        .breadcrumb-current{color:var(--white);font-weight:500}
+        .header-actions{display:flex;align-items:center;gap:12px}
+        .header-btn{width:36px;height:36px;border-radius:8px;background:var(--overlay05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray)}
+        .header-btn:hover{background:var(--overlay10);color:var(--white)}
+        .header-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .user-avatar{width:36px;height:36px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;cursor:pointer}
+        .main-content{flex:1;overflow-y:auto;padding:32px}
+        .main-content::-webkit-scrollbar{width:8px}
+        .main-content::-webkit-scrollbar-thumb{background:var(--overlay10);border-radius:4px}
+        .page-header{margin-bottom:24px}
+        .page-title{font-size:28px;font-weight:600;letter-spacing:-.5px;margin-bottom:8px}
+        .page-description{color:var(--gray);font-size:15px;max-width:600px}
+        .tabs-container{margin-bottom:24px}
+        .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+        .tab{padding:12px 20px;font-size:14px;font-weight:500;color:var(--gray);background:transparent;border:none;cursor:pointer;position:relative;margin-bottom:-1px}
+        .tab:hover{color:var(--light)}
+        .tab.active{color:var(--white)}
+        .tab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gradient);border-radius:2px 2px 0 0}
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+        /* Updated overview boxes to use soft green background with better contrast */
+        .overview-box{background:#f3f4f6;border:1px solid rgba(95,91,247,.12);border-radius:12px;padding:24px;margin-bottom:24px}
+        .overview-box *{color:#1a1a1a}
+        .overview-box .overview-box-icon{background:rgba(95,91,247,.1)}
+        .overview-box .overview-box-icon.success{background:rgba(16,185,129,.2);color:#059669}
+        .overview-box .overview-box-icon.primary{background:rgba(95,91,247,.15);color:#5F5BF7}
+        .overview-box .overview-box-icon.warning{background:rgba(245,158,11,.2);color:#d97706}
+        .overview-box .connection-item{background:rgba(255,255,255,.6)}
+        .overview-box .connection-check{background:rgba(16,185,129,.2);color:#059669}
+        .overview-box .connection-label{color:#525252}
+        .overview-box .stat-item-label{color:#525252}
+        .overview-box .stat-item-sub{color:#525252}
+        .overview-box .stat-item-value{background:linear-gradient(135deg,#5F5BF7 0%,#BFBDFC 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .overview-box .ai-stat-card{background:rgba(255,255,255,.6)}
+        .overview-box .ai-stat-label{color:#525252}
+        .overview-box .ai-stat-icon.ready{background:rgba(16,185,129,.2);color:#059669}
+        .overview-box .ai-stat-icon.review{background:rgba(245,158,11,.2);color:#d97706}
+        .overview-box .ai-stat-icon.shadow{background:rgba(239,68,68,.2);color:#dc2626}
+        .overview-box-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+        .overview-box-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+        .overview-box-icon.success{background:rgba(16,185,129,.15);color:var(--success)}
+        .overview-box-icon.primary{background:rgba(99,102,241,.15);color:var(--primary)}
+        .overview-box-icon.warning{background:rgba(245,158,11,.15);color:var(--warning)}
+        .overview-box-icon svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .overview-box-title{font-size:16px;font-weight:600}
+        .connection-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:16px}
+        .connection-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;background:var(--overlay03);border-radius:8px;text-align:center}
+        .connection-check{width:24px;height:24px;border-radius:50%;background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;color:var(--success)}
+        .connection-check svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none}
+        .connection-label{font-size:12px;color:var(--gray)}
+        .connection-value{font-size:20px;font-weight:600;color:var(--black)}
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+        .stat-item{display:flex;flex-direction:column;gap:4px}
+        .stat-item-label{font-size:13px;color:var(--gray)}
+        .stat-item-value{font-size:32px;font-weight:600;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .stat-item-sub{font-size:12px;color:var(--gray)}
+        .ai-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+        .ai-stat-card{padding:20px;background:var(--overlay03);border-radius:8px;display:flex;align-items:center;gap:16px}
+        .ai-stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+        .ai-stat-icon.ready{background:rgba(16,185,129,.15);color:var(--success)}
+        .ai-stat-icon.review{background:rgba(245,158,11,.15);color:var(--warning)}
+        .ai-stat-icon.shadow{background:rgba(239,68,68,.15);color:var(--danger)}
+        .ai-stat-icon svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.5;fill:none}
+        .ai-stat-info{flex:1}
+        .ai-stat-value{font-size:28px;font-weight:600}
+        .ai-stat-label{font-size:13px;color:var(--gray)}
+        .panel{background:var(--overlay03);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+        .panel-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .panel-title{font-size:16px;font-weight:600}
+        .panel-content{padding:24px}
+        .settings-section{background:var(--overlay03);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+        .settings-section-title{font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+        .settings-section-title svg{width:20px;height:20px;stroke:var(--primary);stroke-width:1.5;fill:none}
+        .settings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+        .setting-item{display:flex;flex-direction:column;gap:8px}
+        .setting-label{font-size:13px;color:var(--gray);font-weight:500}
+        .setting-value{font-size:14px;color:var(--white);padding:10px 14px;background:var(--overlay05);border:1px solid var(--border);border-radius:8px}
+        .data-table{width:100%;border-collapse:collapse}
+        .data-table th{text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+        .data-table td{padding:16px;font-size:14px;border-bottom:1px solid var(--border)}
+        .data-table tr:hover td{background:var(--overlay03)}
+        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500}
+        .status-badge.active{background:rgba(16,185,129,.15);color:#10b981}
+        .status-badge.inactive{background:rgba(107,114,128,.15);color:#9ca3af}
+        .status-badge.pending{background:rgba(245,158,11,.15);color:#f59e0b}
+        .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+        .type-badge{display:inline-flex;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500}
+        .type-badge.access{background:rgba(99,102,241,.15);color:#818cf8}
+        .type-badge.erasure{background:rgba(239,68,68,.15);color:#f87171}
+        .type-badge.consent{background:rgba(16,185,129,.15);color:#34d399}
+        .type-badge.preference{background:rgba(245,158,11,.15);color:#fbbf24}
+        .integration-tags{display:flex;gap:6px;flex-wrap:wrap}
+        .integration-tag{padding:4px 8px;background:var(--overlay05);border:1px solid var(--border);border-radius:4px;font-size:11px;color:var(--light)}
+        .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--gradient);border:none;border-radius:8px;color:var(--white);font-size:14px;font-weight:500;cursor:pointer}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.3)}
+        .btn-primary svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none}
+        .btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--overlay05);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;font-weight:500;cursor:pointer}
+        .btn-secondary:hover{background:var(--overlay10)}
+        .btn-secondary svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+        .empty-state{text-align:center;padding:60px 40px}
+        .empty-icon{width:64px;height:64px;margin:0 auto 20px;background:var(--overlay05);border-radius:16px;display:flex;align-items:center;justify-content:center}
+        .empty-icon svg{width:32px;height:32px;stroke:var(--gray);stroke-width:1.5;fill:none}
+        .empty-title{font-size:18px;font-weight:600;margin-bottom:8px}
+        .empty-description{font-size:14px;color:var(--gray);max-width:400px;margin:0 auto 24px}
+        .subpage-content{display:none}
+        .subpage-content.active{display:block}
+        .mono{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--light)}
+        /* New styles for toggle switches */
+        .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
+        .toggle-row:last-child{border-bottom:none}
+        .toggle-label{font-size:14px;font-weight:500}
+        .toggle-switch{position:relative;width:48px;height:26px;background:var(--overlay10);border-radius:13px;cursor:pointer;transition:background .2s}
+        .toggle-switch.active{background:var(--primary)}
+        .toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--white);border-radius:50%;transition:transform .2s}
+        .toggle-switch.active::after{transform:translateX(22px)}
+        /* New styles for code block */
+        .code-block{background:var(--black);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;position:relative}
+        .code-block pre{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--light);overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+        .copy-btn{position:absolute;top:8px;right:8px;padding:6px 12px;background:var(--overlay10);border:1px solid var(--border);border-radius:6px;color:var(--light);font-size:12px;cursor:pointer}
+        .copy-btn:hover{background:var(--overlay05);color:var(--white)}
+        /* New styles for search input */
+        .search-input-wrapper{position:relative;margin-bottom:16px}
+        .search-input{width:100%;padding:12px 16px 12px 44px;background:var(--overlay05);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px}
+        .search-input::placeholder{color:var(--gray)}
+        .search-input:focus{outline:none;border-color:var(--primary)}
+        .search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--gray);stroke-width:1.5;fill:none}
+        /* New styles for color picker and brand config */
+        .color-picker-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+        .color-picker-item{display:flex;flex-direction:column;gap:8px}
+        .color-preview{width:100%;height:48px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px}
+        .logo-upload-area{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer}
+        .logo-upload-area:hover{border-color:var(--primary);background:var(--overlay03)}
+        .logo-upload-icon{width:48px;height:48px;margin:0 auto 12px;background:var(--overlay05);border-radius:12px;display:flex;align-items:center;justify-content:center}
+        .logo-upload-icon svg{width:24px;height:24px;stroke:var(--gray);stroke-width:1.5;fill:none}
+        /* New styles for system cards */
+        .system-cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+        .system-card{background:var(--overlay03);border:1px solid var(--border);border-radius:12px;padding:20px}
+        .system-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .system-card-name{font-size:14px;font-weight:600}
+        .system-card-stat{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+        .system-card-stat-label{font-size:13px;color:var(--gray)}
+        .system-card-stat-value{font-size:13px;font-weight:500}
+        .progress-bar{height:6px;background:var(--overlay10);border-radius:3px;overflow:hidden;margin-top:12px}
+        .progress-fill{height:100%;border-radius:3px;transition:width .3s}
+        .progress-fill.success{background:var(--success)}
+        .progress-fill.warning{background:var(--warning)}
+        .progress-fill.danger{background:var(--danger)}
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-mark">T</div>
+                <span class="logo-text">Transcend</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-home">
+                    <!-- Renamed Overview to Homepage -->
+                    <a class="nav-home-link active" data-page="overview">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+                        Homepage
+                    </a>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-section">
+                    <div class="nav-section-header">
+                        <div class="nav-section-header-content"><span class="section-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Configuration</div>
+                        <span class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-link" data-page="identifiers">Identifiers</a>
+                        <a class="nav-sub-link" data-page="policies">Policies</a>
+                        <a class="nav-sub-link" data-page="brand">Brand</a>
+                        <a class="nav-sub-link" data-page="integrations">Integrations</a>
+                        <a class="nav-sub-link" data-page="business-entities">Business Entities</a>
+                        <a class="nav-sub-link" data-page="data-model">Data Model</a>
+                        <a class="nav-sub-link" data-page="api-keys">API Keys</a>
+                        <a class="nav-sub-link" data-page="security">Security</a>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-header">
+                        <div class="nav-section-header-content"><span class="section-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>User Interfaces</div>
+                        <span class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-link" data-page="consent-banner">Consent Banner</a>
+                        <a class="nav-sub-link" data-page="privacy-center">Privacy Center</a>
+                        <a class="nav-sub-link" data-page="headless">Headless</a>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-header">
+                        <div class="nav-section-header-content"><span class="section-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Automation</div>
+                        <span class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-link" data-page="egress">Egress</a>
+                        <a class="nav-sub-link" data-page="ingress">Ingress</a>
+                        <a class="nav-sub-link" data-page="edge-layer">Edge Layer</a>
+                        <!-- Added Assessments subpage -->
+                        <a class="nav-sub-link" data-page="assessments">Assessments</a>
+                    </div>
+                </div>
+                <!-- Renamed System Insight to Operations and added Consent/DSR subpages -->
+                <div class="nav-section">
+                    <div class="nav-section-header">
+                        <div class="nav-section-header-content"><span class="section-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Operations</div>
+                        <span class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-link" data-page="data-inventory">Data Inventory</a>
+                        <a class="nav-sub-link" data-page="classification">Classification</a>
+                        <a class="nav-sub-link" data-page="ai-readiness">AI Readiness</a>
+                        <a class="nav-sub-link" data-page="ops-consent">Consent</a>
+                        <a class="nav-sub-link" data-page="ops-dsr">Data Subject Requests</a>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-header">
+                        <div class="nav-section-header-content"><span class="section-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>Reporting</div>
+                        <span class="collapse-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="nav-sub-items">
+                        <a class="nav-sub-link" data-page="record-of-consent">Record of Consent</a>
+                        <a class="nav-sub-link" data-page="ropa">RoPA</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="invite-btn" data-page="invite-users">
+                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    Invite Users
+                </button>
+            </div>
+        </aside>
+        <main class="main-wrapper">
+            <header class="main-header">
+                <div class="header-breadcrumb">
+                    <span class="breadcrumb-section" id="breadcrumb-section">Home</span>
+                    <span class="breadcrumb-separator" id="breadcrumb-separator" style="display:none">/</span>
+                    <span class="breadcrumb-current" id="breadcrumb-current" style="display:none"></span>
+                </div>
+                <div class="header-actions">
+                    <button class="header-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+                    <button class="header-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+                    <div class="user-avatar">JD</div>
+                </div>
+            </header>
+            <div class="main-content">
+                <!-- Renamed Overview to Homepage -->
+                <div class="subpage-content active" id="page-overview">
+                    <div class="page-header">
+                        <h1 class="page-title">Homepage</h1>
+                        <p class="page-description">A high-level summary of all privacy risks across your organization.</p>
+                    </div>
+                    <div class="overview-box">
+                        <div class="overview-box-header">
+                            <div class="overview-box-icon success"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <div class="overview-box-title">Active Connections</div>
+                        </div>
+                        <div class="connection-grid">
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">1</div><div class="connection-label">Consent Banner</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">4</div><div class="connection-label">Privacy Centers</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">4</div><div class="connection-label">Purposes</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">5</div><div class="connection-label">Policies</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">8</div><div class="connection-label">Automations</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">10</div><div class="connection-label">Systems</div></div>
+                            <div class="connection-item"><div class="connection-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="connection-value">4</div><div class="connection-label">Assessments</div></div>
+                        </div>
+                    </div>
+                    <div class="overview-box">
+                        <div class="overview-box-header">
+                            <div class="overview-box-icon primary"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                            <div class="overview-box-title">Status (Last 30 Days)</div>
+                        </div>
+                        <div class="stats-row">
+                            <div class="stat-item"><div class="stat-item-label">Number of Consents</div><div class="stat-item-value">847,293</div><div class="stat-item-sub">L30 collected</div></div>
+                            <div class="stat-item"><div class="stat-item-label">DSR Automations</div><div class="stat-item-value">12,847</div><div class="stat-item-sub">L30 processed</div></div>
+                            <div class="stat-item"><div class="stat-item-label">Edge Checks</div><div class="stat-item-value">2.4M</div><div class="stat-item-sub">L30 enforced</div></div>
+                        </div>
+                    </div>
+                    <div class="overview-box">
+                        <div class="overview-box-header">
+                            <div class="overview-box-icon warning"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+                            <div class="overview-box-title">AI Readiness</div>
+                        </div>
+                        <div class="ai-stats-grid">
+                            <div class="ai-stat-card"><div class="ai-stat-icon ready"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="ai-stat-info"><div class="ai-stat-value">7</div><div class="ai-stat-label">Systems AI Ready</div></div></div>
+                            <div class="ai-stat-card"><div class="ai-stat-icon review"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="ai-stat-info"><div class="ai-stat-value">3</div><div class="ai-stat-label">Systems Need Review</div></div></div>
+                            <div class="ai-stat-card"><div class="ai-stat-icon shadow"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="ai-stat-info"><div class="ai-stat-value">2</div><div class="ai-stat-label">Shadow IT Detections</div></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Updated Identifiers page with Source column -->
+                <div class="subpage-content" id="page-identifiers">
+                    <div class="page-header"><h1 class="page-title">Identifiers</h1><p class="page-description">Manage unique identifiers for data subject resolution.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="identifiers-main">Identifiers</button><button class="tab" data-tab="identifiers-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="identifiers-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Configured Identifiers</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>Name</th><th>Type</th><th>Source</th><th>Systems</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td><span class="mono">email</span></td><td>Primary</td><td><span class="type-badge access">User</span></td><td>12</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td><span class="mono">user_id</span></td><td>Primary</td><td><span class="type-badge access">User</span></td><td>8</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td><span class="mono">device_id</span></td><td>Secondary</td><td><span class="type-badge consent">Enrichment</span></td><td>5</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td><span class="mono">phone_number</span></td><td>Secondary</td><td><span class="type-badge consent">Enrichment</span></td><td>3</td><td><span class="status-badge pending"><span class="status-dot"></span>Pending</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="identifiers-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16 14:32</span></td><td>john@co.com</td><td>Created</td><td>Added device_id</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-policies"><div class="page-header"><h1 class="page-title">Policies</h1><p class="page-description">Define privacy policies for data handling.</p></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="policies-main">Policies</button><button class="tab" data-tab="policies-purposes">Purposes</button><button class="tab" data-tab="policies-processing">Processing Activities</button><button class="tab" data-tab="policies-subjects">Data Subjects</button><button class="tab" data-tab="policies-audit">Audit Trail</button></div></div><div class="tab-content active" id="policies-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Active Policies</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create</button></div><table class="data-table"><thead><tr><th>Name</th><th>Regulation</th><th>Updated</th><th>Status</th></tr></thead><tbody><tr><td>GDPR Retention</td><td>GDPR</td><td>Jan 10</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr><tr><td>CCPA Rights</td><td>CCPA</td><td>Jan 8</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="policies-purposes"><div class="panel"><div class="panel-header"><h3 class="panel-title">Purposes</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Purpose</th><th>Legal Basis</th><th>Categories</th><th>Status</th></tr></thead><tbody><tr><td>Marketing</td><td>Consent</td><td>Email, Name</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="policies-processing"><div class="panel"><div class="panel-header"><h3 class="panel-title">Processing Activities</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Activity</th><th>Purpose</th><th>Data Categories</th><th>Systems</th><th>Status</th></tr></thead><tbody><tr><td>Data Collection</td><td>Marketing</td><td>Contact Info</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span></div></td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="policies-subjects"><div class="panel"><div class="panel-header"><h3 class="panel-title">Data Subjects</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Subject Type</th><th>Description</th><th>Regulations</th><th>Status</th></tr></thead><tbody><tr><td>Customer</td><td>Individual data provided during purchase</td><td>GDPR, CCPA</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr><tr><td>Employee</td><td>Internal HR data</td><td>GDPR</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="policies-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>jane@co.com</td><td>Created</td><td>CCPA Rights policy</td></tr></tbody></table></div></div></div>
+
+                <!-- Updated Brand page with color, font, logo configuration -->
+                <div class="subpage-content" id="page-brand">
+                    <div class="page-header"><h1 class="page-title">Brand</h1><p class="page-description">Customize the look and feel of your privacy interfaces.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="brand-main">Settings</button><button class="tab" data-tab="brand-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="brand-main">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0-6.88 17.23"/></svg>Brand Colors</div>
+                            <div class="color-picker-grid">
+                                <div class="color-picker-item">
+                                    <span class="setting-label">Primary Color</span>
+                                    <div class="color-preview" style="background:#6366f1;color:#fff">#6366F1</div>
+                                </div>
+                                <div class="color-picker-item">
+                                    <span class="setting-label">Secondary Color</span>
+                                    <div class="color-preview" style="background:#8b5cf6;color:#fff">#8B5CF6</div>
+                                </div>
+                                <div class="color-picker-item">
+                                    <span class="setting-label">Background Color</span>
+                                    <div class="color-preview" style="background:#ffffff;color:#0a0a0a;border:1px solid #e5e5e5">#FFFFFF</div>
+                                </div>
+                                <div class="color-picker-item">
+                                    <span class="setting-label">Text Color</span>
+                                    <div class="color-preview" style="background:#0a0a0a;color:#fff">#0A0A0A</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>Typography</div>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <span class="setting-label">Heading Font</span>
+                                    <span class="setting-value">DM Sans</span>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-label">Body Font</span>
+                                    <span class="setting-value">DM Sans</span>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-label">Monospace Font</span>
+                                    <span class="setting-value">JetBrains Mono</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Logos</div>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <span class="setting-label">Primary Logo</span>
+                                    <div class="logo-upload-area">
+                                        <div class="logo-upload-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                                        <div style="font-size:14px;color:var(--gray)">Click to upload or drag and drop</div>
+                                        <div style="font-size:12px;color:var(--gray);margin-top:4px">SVG, PNG, JPG (max 2MB)</div>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-label">Favicon</span>
+                                    <div class="logo-upload-area">
+                                        <div class="logo-upload-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                                        <div style="font-size:14px;color:var(--gray)">Click to upload or drag and drop</div>
+                                        <div style="font-size:12px;color:var(--gray);margin-top:4px">ICO, PNG (32x32 or 16x16)</div>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-label">Dark Mode Logo</span>
+                                    <div class="logo-upload-area">
+                                        <div class="logo-upload-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                                        <div style="font-size:14px;color:var(--gray)">Click to upload or drag and drop</div>
+                                        <div style="font-size:12px;color:var(--gray);margin-top:4px">SVG, PNG, JPG (max 2MB)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-primary" style="margin-top:8px"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Save Changes</button>
+                    </div>
+                    <div class="tab-content" id="brand-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>jane@co.com</td><td>Updated</td><td>Changed primary color</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-integrations"><div class="page-header"><h1 class="page-title">Integrations</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="integrations-main">Integrations</button><button class="tab" data-tab="integrations-audit">Audit Trail</button></div></div><div class="tab-content active" id="integrations-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Connected Systems</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>System</th><th>Type</th><th>Last Sync</th><th>Status</th></tr></thead><tbody><tr><td>Salesforce</td><td>CRM</td><td>2h ago</td><td><span class="status-badge active"><span class="status-dot"></span>Connected</span></td></tr><tr><td>Snowflake</td><td>Warehouse</td><td>1h ago</td><td><span class="status-badge active"><span class="status-dot"></span>Connected</span></td></tr><tr><td>Klaviyo</td><td>Marketing</td><td>30m ago</td><td><span class="status-badge active"><span class="status-dot"></span>Connected</span></td></tr></tbody></table></div></div><div class="tab-content" id="integrations-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>admin@co.com</td><td>Connected</td><td>Added Segment</td></tr></tbody></table></div></div></div>
+
+                <div class="subpage-content" id="page-business-entities"><div class="page-header"><h1 class="page-title">Business Entities</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="entities-main">Entities</button><button class="tab" data-tab="entities-audit">Audit Trail</button></div></div><div class="tab-content active" id="entities-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Entities</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Name</th><th>Jurisdiction</th><th>DPO</th><th>Status</th></tr></thead><tbody><tr><td>Acme Corp</td><td>US</td><td>dpo@acme.com</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="entities-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-10</span></td><td>admin@co.com</td><td>Created</td><td>Added Acme UK</td></tr></tbody></table></div></div></div>
+
+                <div class="subpage-content" id="page-data-model"><div class="page-header"><h1 class="page-title">Data Model</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="datamodel-categories">Data Categories</button><button class="tab" data-tab="datamodel-fields">Custom Fields</button><button class="tab" data-tab="datamodel-audit">Audit Trail</button></div></div><div class="tab-content active" id="datamodel-categories"><div class="panel"><div class="panel-header"><h3 class="panel-title">Categories</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Category</th><th>Description</th><th>Sensitivity</th><th>Status</th></tr></thead><tbody><tr><td>Personal Identifiers</td><td>Name, email</td><td>High</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="datamodel-fields"><div class="panel"><div class="panel-header"><h3 class="panel-title">Custom Fields</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Field</th><th>Type</th><th>Category</th><th>Required</th></tr></thead><tbody><tr><td><span class="mono">loyalty_tier</span></td><td>String</td><td>Behavioral</td><td>No</td></tr></tbody></table></div></div><div class="tab-content" id="datamodel-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>jane@co.com</td><td>Created</td><td>Added loyalty_tier</td></tr></tbody></table></div></div></div>
+
+                <div class="subpage-content" id="page-api-keys"><div class="page-header"><h1 class="page-title">API Keys</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="apikeys-main">Keys</button><button class="tab" data-tab="apikeys-audit">Audit Trail</button></div></div><div class="tab-content active" id="apikeys-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">API Keys</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Generate</button></div><table class="data-table"><thead><tr><th>Name</th><th>Prefix</th><th>Created</th><th>Status</th></tr></thead><tbody><tr><td>Production</td><td><span class="mono">trs_prod_****</span></td><td>Dec 1</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="apikeys-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>admin@co.com</td><td>Rotated</td><td>Prod key</td></tr></tbody></table></div></div></div>
+
+                <div class="subpage-content" id="page-security"><div class="page-header"><h1 class="page-title">Security</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="security-main">Settings</button><button class="tab" data-tab="security-audit">Audit Trail</button></div></div><div class="tab-content active" id="security-main"><div class="settings-section"><div class="settings-section-title"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Auth Settings</div><div class="settings-grid"><div class="setting-item"><span class="setting-label">MFA</span><span class="setting-value">Required</span></div><div class="setting-item"><span class="setting-label">Session</span><span class="setting-value">8 hours</span></div><div class="setting-item"><span class="setting-label">Password</span><span class="setting-value">Strong</span></div></div></div></div><div class="tab-content" id="security-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>admin@co.com</td><td>Modified</td><td>Enabled MFA</td></tr></tbody></table></div></div></div>
+
+                <!-- Updated Consent Banner page with templates table -->
+                <div class="subpage-content" id="page-consent-banner">
+                    <div class="page-header"><h1 class="page-title">Consent Banner</h1><p class="page-description">Manage consent banner templates for your websites.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="banner-main">Templates</button><button class="tab" data-tab="banner-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="banner-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Consent Banner Templates</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Template</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>Name</th><th>Type</th><th>Regions</th><th>Last Updated</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td>GDPR Banner</td><td>Full</td><td>EU, UK</td><td>Jan 15</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td>CCPA Notice</td><td>Minimal</td><td>California</td><td>Jan 12</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td>Global Default</td><td>Standard</td><td>Global</td><td>Jan 10</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td>Brazil LGPD</td><td>Full</td><td>Brazil</td><td>Jan 8</td><td><span class="status-badge pending"><span class="status-dot"></span>Draft</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="banner-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>jane@co.com</td><td>Created</td><td>GDPR Banner template</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-privacy-center"><div class="page-header"><h1 class="page-title">Privacy Center</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="privacy-center-main">Centers</button><button class="tab" data-tab="privacy-center-audit">Audit Trail</button></div></div><div class="tab-content active" id="privacy-center-main"><div class="settings-section"><div class="settings-section-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>Global Settings</div><div class="settings-grid"><div class="setting-item"><span class="setting-label">Language</span><span class="setting-value">English (US)</span></div><div class="setting-item"><span class="setting-label">Request Types</span><span class="setting-value">Access, Erasure, Opt-out</span></div><div class="setting-item"><span class="setting-label">Auth</span><span class="setting-value">Email Verification</span></div></div></div><div class="panel"><div class="panel-header"><h3 class="panel-title">Privacy Centers by Region/Site</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Name</th><th>Region</th><th>URL</th><th>Regulations</th><th>Status</th></tr></thead><tbody><tr><td>Global</td><td>Global</td><td><span class="mono">privacy.acme.com</span></td><td>GDPR, CCPA</td><td><span class="status-badge active"><span class="status-dot"></span>Live</span></td></tr><tr><td>EU Center</td><td>EU</td><td><span class="mono">privacy.acme.eu</span></td><td>GDPR</td><td><span class="status-badge active"><span class="status-dot"></span>Live</span></td></tr><tr><td>California</td><td>CA, US</td><td><span class="mono">privacy.acme.com/ca</span></td><td>CCPA</td><td><span class="status-badge active"><span class="status-dot"></span>Live</span></td></tr></tbody></table></div></div><div class="tab-content" id="privacy-center-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>jane@co.com</td><td>Updated</td><td>California Privacy Center</td></tr></tbody></table></div></div></div>
+
+                <!-- Updated Headless page with toggles and script -->
+                <div class="subpage-content" id="page-headless">
+                    <div class="page-header"><h1 class="page-title">Headless</h1><p class="page-description">Configure headless mode for embedding privacy controls in your own interface.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="headless-main">Configuration</button><button class="tab" data-tab="headless-script">Integration Script</button><button class="tab" data-tab="headless-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="headless-main">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Available Features</div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Preferences</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Consent</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Tracking Technologies</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Privacy Policy</span>
+                                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                        </div>
+                        <button class="btn-primary"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Save Configuration</button>
+                    </div>
+                    <div class="tab-content" id="headless-script">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Integration Script</div>
+                            <p style="color:var(--gray);font-size:14px;margin-bottom:16px">Copy and paste this script into your website to enable headless privacy controls.</p>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+                                <pre>&lt;script src="https://cdn.transcend.io/headless/v2/transcend.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Transcend.init({
+    bundleId: 'your-bundle-id',
+    features: {
+      preferences: true,
+      consent: true,
+      trackingTechnologies: true,
+      privacyPolicy: false
+    },
+    onReady: function() {
+      console.log('Transcend headless initialized');
+    }
+  });
+&lt;/script&gt;</pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="headless-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>john@co.com</td><td>Modified</td><td>Enabled consent feature</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-egress"><div class="page-header"><h1 class="page-title">Egress</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="egress-main">Automations</button><button class="tab" data-tab="egress-audit">Audit Trail</button></div></div><div class="tab-content active" id="egress-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Egress Automations</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div><table class="data-table"><thead><tr><th>Type</th><th>Name</th><th>Integrations</th></tr></thead><tbody><tr><td><span class="type-badge access">Access</span></td><td>Data Export</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span><span class="integration-tag">Snowflake</span></div></td></tr><tr><td><span class="type-badge erasure">Erasure</span></td><td>Data Deletion</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span><span class="integration-tag">Snowflake</span><span class="integration-tag">Klaviyo</span></div></td></tr><tr><td><span class="type-badge consent">Consent</span></td><td>Sale Opt Out</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span><span class="integration-tag">Klaviyo</span></div></td></tr><tr><td><span class="type-badge consent">Consent</span></td><td>Do Not Train</td><td><div class="integration-tags"><span class="integration-tag">Snowflake</span></div></td></tr><tr><td><span class="type-badge consent">Consent</span></td><td>Unsubscribe</td><td><div class="integration-tags"><span class="integration-tag">Klaviyo</span><span class="integration-tag">Salesforce</span></div></td></tr></tbody></table></div></div><div class="tab-content" id="egress-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>john@co.com</td><td>Created</td><td>Sale Opt Out automation</td></tr></tbody></table></div></div></div>
+
+                <!-- Updated Ingress page with egress automations table per request -->
+                <div class="subpage-content" id="page-ingress">
+                    <div class="page-header"><h1 class="page-title">Ingress</h1><p class="page-description">Configure egress automations for syncing consent and preferences to downstream systems.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="ingress-main">Egress Automations</button><button class="tab" data-tab="ingress-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="ingress-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Egress Automations</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>Type</th><th>Name</th><th>Integrations</th></tr></thead>
+                                <tbody>
+                                    <tr><td><span class="type-badge consent">Consent</span></td><td>Sale Opt Out</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span><span class="integration-tag">Snowflake</span><span class="integration-tag">Klaviyo</span></div></td></tr>
+                                    <tr><td><span class="type-badge consent">Consent</span></td><td>Do Not Train</td><td><div class="integration-tags"><span class="integration-tag">Salesforce</span><span class="integration-tag">Snowflake</span></div></td></tr>
+                                    <tr><td><span class="type-badge consent">Consent</span></td><td>Unsubscribe</td><td><div class="integration-tags"><span class="integration-tag">Klaviyo</span><span class="integration-tag">Salesforce</span></div></td></tr>
+                                    <tr><td><span class="type-badge preference">Preference</span></td><td>Marketing Preferences</td><td><div class="integration-tags"><span class="integration-tag">Klaviyo</span><span class="integration-tag">Salesforce</span></div></td></tr>
+                                    <tr><td><span class="type-badge preference">Preference</span></td><td>Communication Channel</td><td><div class="integration-tags"><span class="integration-tag">Snowflake</span><span class="integration-tag">Klaviyo</span></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="ingress-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>john@co.com</td><td>Created</td><td>Partner API</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Updated Edge Layer page with configuration for userID and purpose preferences -->
+                <div class="subpage-content" id="page-edge-layer">
+                    <div class="page-header"><h1 class="page-title">Edge Layer</h1><p class="page-description">Configure what user information is available at the edge for real-time consent enforcement.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="edge-main">Configuration</button><button class="tab" data-tab="edge-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="edge-main">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>User Information at Edge</div>
+                            <p style="color:var(--gray);font-size:14px;margin-bottom:16px">Select which user data should be available at the edge layer for consent enforcement.</p>
+                            <div class="toggle-row">
+                                <span class="toggle-label">User ID</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Purpose Preferences</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Consent Status</span>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Region/Jurisdiction</span>
+                                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="toggle-row">
+                                <span class="toggle-label">Last Updated Timestamp</span>
+                                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                        </div>
+                        <button class="btn-primary"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Save Configuration</button>
+                    </div>
+                    <div class="tab-content" id="edge-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-14</span></td><td>admin@co.com</td><td>Modified</td><td>Enabled purpose preferences</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Added Assessments page under Automation -->
+                <div class="subpage-content" id="page-assessments">
+                    <div class="page-header"><h1 class="page-title">Assessments</h1><p class="page-description">Manage privacy impact assessments and compliance evaluations.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="assessments-main">Assessments</button><button class="tab" data-tab="assessments-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="assessments-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Active Assessments</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Assessment</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>Name</th><th>Type</th><th>Systems</th><th>Due Date</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Q1 2026 DPIA</td><td>Data Protection Impact</td><td>12</td><td>Mar 31</td><td><span class="status-badge active"><span class="status-dot"></span>In Progress</span></td></tr>
+                                    <tr><td>AI Training Review</td><td>AI Compliance</td><td>5</td><td>Feb 15</td><td><span class="status-badge pending"><span class="status-dot"></span>Pending</span></td></tr>
+                                    <tr><td>Vendor Risk Assessment</td><td>Third Party</td><td>8</td><td>Jan 30</td><td><span class="status-badge active"><span class="status-dot"></span>In Progress</span></td></tr>
+                                    <tr><td>Annual Privacy Audit</td><td>Comprehensive</td><td>All</td><td>Dec 31</td><td><span class="status-badge inactive"><span class="status-dot"></span>Completed</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="assessments-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>jane@co.com</td><td>Created</td><td>Q1 2026 DPIA</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-data-inventory"><div class="page-header"><h1 class="page-title">Data Inventory</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="inventory-triage">Triage</button><button class="tab" data-tab="inventory-approved">Approved</button><button class="tab" data-tab="inventory-audit">Audit Trail</button></div></div><div class="tab-content active" id="inventory-triage"><div class="panel"><div class="panel-header"><h3 class="panel-title">Pending Review</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Scan</button></div><table class="data-table"><thead><tr><th>Store</th><th>Type</th><th>PII</th><th>Discovered</th><th>Status</th></tr></thead><tbody><tr><td>Legacy CRM</td><td>MySQL</td><td>32</td><td>Today</td><td><span class="status-badge pending"><span class="status-dot"></span>Review</span></td></tr></tbody></table></div></div><div class="tab-content" id="inventory-approved"><div class="panel"><div class="panel-header"><h3 class="panel-title">Approved</h3></div><table class="data-table"><thead><tr><th>Store</th><th>Type</th><th>PII</th><th>Scanned</th><th>Status</th></tr></thead><tbody><tr><td>Users DB</td><td>PostgreSQL</td><td>24</td><td>Today</td><td><span class="status-badge active"><span class="status-dot"></span>Approved</span></td></tr></tbody></table></div></div><div class="tab-content" id="inventory-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>System</td><td>Scan</td><td>Legacy CRM</td></tr></tbody></table></div></div></div>
+
+                <!-- Updated Classification page with system cards showing status and % sensitive data -->
+                <div class="subpage-content" id="page-classification">
+                    <div class="page-header"><h1 class="page-title">Classification</h1><p class="page-description">View data classification status across your connected systems.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="classification-main">Systems</button><button class="tab" data-tab="classification-rules">Rules</button><button class="tab" data-tab="classification-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="classification-main">
+                        <div class="system-cards-grid">
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">Salesforce</span>
+                                    <span class="status-badge active"><span class="status-dot"></span>Classified</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">24%</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill warning" style="width:24%"></div></div>
+                            </div>
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">Snowflake</span>
+                                    <span class="status-badge active"><span class="status-dot"></span>Classified</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">42%</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill warning" style="width:42%"></div></div>
+                            </div>
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">Klaviyo</span>
+                                    <span class="status-badge active"><span class="status-dot"></span>Classified</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">8%</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill success" style="width:8%"></div></div>
+                            </div>
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">PostgreSQL</span>
+                                    <span class="status-badge pending"><span class="status-dot"></span>In Progress</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">67%</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill danger" style="width:67%"></div></div>
+                            </div>
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">MongoDB</span>
+                                    <span class="status-badge active"><span class="status-dot"></span>Classified</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">31%</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill warning" style="width:31%"></div></div>
+                            </div>
+                            <div class="system-card">
+                                <div class="system-card-header">
+                                    <span class="system-card-name">S3 Bucket</span>
+                                    <span class="status-badge inactive"><span class="status-dot"></span>Not Started</span>
+                                </div>
+                                <div class="system-card-stat">
+                                    <span class="system-card-stat-label">Sensitive Data:</span>
+                                    <span class="system-card-stat-value">—</span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="classification-rules">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Classification Rules</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>Classification</th><th>Category</th><th>Fields</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Email</td><td>Contact</td><td>47</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                    <tr><td>SSN</td><td>Sensitive</td><td>3</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="classification-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-14</span></td><td>jane@co.com</td><td>Created</td><td>SSN rule</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Updated AI Readiness page with systems table showing % consented data -->
+                <div class="subpage-content" id="page-ai-readiness">
+                    <div class="page-header"><h1 class="page-title">AI Readiness</h1><p class="page-description">Track consent coverage across systems for AI training eligibility.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="ai-main">Systems</button><button class="tab" data-tab="ai-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="ai-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">AI Readiness by System</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Run Assessment</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>System</th><th>Consented Data</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Salesforce</td><td>100%</td><td><span class="status-badge active"><span class="status-dot"></span>Ready</span></td></tr>
+                                    <tr><td>Snowflake</td><td>100%</td><td><span class="status-badge active"><span class="status-dot"></span>Ready</span></td></tr>
+                                    <tr><td>Klaviyo</td><td>100%</td><td><span class="status-badge active"><span class="status-dot"></span>Ready</span></td></tr>
+                                    <tr><td>PostgreSQL</td><td>78%</td><td><span class="status-badge pending"><span class="status-dot"></span>Review</span></td></tr>
+                                    <tr><td>MongoDB</td><td>92%</td><td><span class="status-badge pending"><span class="status-dot"></span>Review</span></td></tr>
+                                    <tr><td>S3 Bucket</td><td>65%</td><td><span class="status-badge pending"><span class="status-dot"></span>Review</span></td></tr>
+                                    <tr><td>Legacy CRM</td><td>45%</td><td><span class="status-badge inactive"><span class="status-dot"></span>Not Ready</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="ai-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>System</td><td>Assessment</td><td>Ran scan</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Added Consent subpage under Operations -->
+                <div class="subpage-content" id="page-ops-consent">
+                    <div class="page-header"><h1 class="page-title">Consent</h1><p class="page-description">Monitor and manage consent collection operations.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="ops-consent-main">Overview</button><button class="tab" data-tab="ops-consent-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="ops-consent-main">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Consent Metrics (Last 30 Days)</div>
+                            <div class="settings-grid">
+                                <div class="setting-item"><span class="setting-label">Total Consents</span><span class="setting-value">847,293</span></div>
+                                <div class="setting-item"><span class="setting-label">Opt-in Rate</span><span class="setting-value">72.4%</span></div>
+                                <div class="setting-item"><span class="setting-label">Opt-out Rate</span><span class="setting-value">27.6%</span></div>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Recent Consent Events</h3></div>
+                            <table class="data-table">
+                                <thead><tr><th>Time</th><th>Subject</th><th>Purpose</th><th>Action</th><th>Source</th></tr></thead>
+                                <tbody>
+                                    <tr><td><span class="mono">14:32</span></td><td><span class="mono">user_82***</span></td><td>Marketing</td><td><span class="status-badge active"><span class="status-dot"></span>Opt-in</span></td><td>Privacy Center</td></tr>
+                                    <tr><td><span class="mono">14:28</span></td><td><span class="mono">user_93***</span></td><td>Analytics</td><td><span class="status-badge inactive"><span class="status-dot"></span>Opt-out</span></td><td>Consent Banner</td></tr>
+                                    <tr><td><span class="mono">14:15</span></td><td><span class="mono">user_71***</span></td><td>Personalization</td><td><span class="status-badge active"><span class="status-dot"></span>Opt-in</span></td><td>Privacy Center</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="ops-consent-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>System</td><td>Processed</td><td>Batch consent sync</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Added Data Subject Requests subpage under Operations -->
+                <div class="subpage-content" id="page-ops-dsr">
+                    <div class="page-header"><h1 class="page-title">Data Subject Requests</h1><p class="page-description">Monitor and manage incoming data subject requests.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="ops-dsr-main">Requests</button><button class="tab" data-tab="ops-dsr-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="ops-dsr-main">
+                        <div class="settings-section">
+                            <div class="settings-section-title"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>DSR Metrics (Last 30 Days)</div>
+                            <div class="settings-grid">
+                                <div class="setting-item"><span class="setting-label">Total Requests</span><span class="setting-value">12,847</span></div>
+                                <div class="setting-item"><span class="setting-label">Avg. Resolution Time</span><span class="setting-value">4.2 hours</span></div>
+                                <div class="setting-item"><span class="setting-label">Automation Rate</span><span class="setting-value">94.7%</span></div>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Recent Requests</h3><button class="btn-secondary"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button></div>
+                            <table class="data-table">
+                                <thead><tr><th>ID</th><th>Type</th><th>Subject</th><th>Submitted</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td><span class="mono">DSR-2847</span></td><td><span class="type-badge access">Access</span></td><td><span class="mono">john@***</span></td><td>Today 14:22</td><td><span class="status-badge active"><span class="status-dot"></span>Completed</span></td></tr>
+                                    <tr><td><span class="mono">DSR-2846</span></td><td><span class="type-badge erasure">Erasure</span></td><td><span class="mono">jane@***</span></td><td>Today 13:45</td><td><span class="status-badge pending"><span class="status-dot"></span>Processing</span></td></tr>
+                                    <tr><td><span class="mono">DSR-2845</span></td><td><span class="type-badge access">Access</span></td><td><span class="mono">mike@***</span></td><td>Today 12:30</td><td><span class="status-badge active"><span class="status-dot"></span>Completed</span></td></tr>
+                                    <tr><td><span class="mono">DSR-2844</span></td><td><span class="type-badge consent">Opt-out</span></td><td><span class="mono">sara@***</span></td><td>Today 11:15</td><td><span class="status-badge active"><span class="status-dot"></span>Completed</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="ops-dsr-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>System</td><td>Processed</td><td>DSR-2847 completed</td></tr></tbody></table></div></div>
+                </div>
+
+                <!-- Updated Record of Consent page with search bar -->
+                <div class="subpage-content" id="page-record-of-consent">
+                    <div class="page-header"><h1 class="page-title">Record of Consent</h1><p class="page-description">Search and view consent records for individual data subjects.</p></div>
+                    <div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="consent-records-main">Records</button><button class="tab" data-tab="consent-records-audit">Audit Trail</button></div></div>
+                    <div class="tab-content active" id="consent-records-main">
+                        <div class="panel">
+                            <div class="panel-header"><h3 class="panel-title">Consent Records</h3><button class="btn-secondary"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button></div>
+                            <div class="panel-content">
+                                <div class="search-input-wrapper">
+                                    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" class="search-input" placeholder="Search by email, user ID, or name...">
+                                </div>
+                                <table class="data-table">
+                                    <thead><tr><th>Subject</th><th>Purpose</th><th>Consent</th><th>Source</th><th>Time</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><span class="mono">user_82***</span></td><td>Marketing</td><td><span class="status-badge active"><span class="status-dot"></span>Yes</span></td><td>Privacy Center</td><td><span class="mono">14:22</span></td></tr>
+                                        <tr><td><span class="mono">user_93***</span></td><td>Analytics</td><td><span class="status-badge inactive"><span class="status-dot"></span>No</span></td><td>Consent Banner</td><td><span class="mono">14:18</span></td></tr>
+                                        <tr><td><span class="mono">user_71***</span></td><td>Personalization</td><td><span class="status-badge active"><span class="status-dot"></span>Yes</span></td><td>Privacy Center</td><td><span class="mono">14:05</span></td></tr>
+                                        <tr><td><span class="mono">user_64***</span></td><td>Marketing</td><td><span class="status-badge active"><span class="status-dot"></span>Yes</span></td><td>Consent Banner</td><td><span class="mono">13:52</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="consent-records-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>admin@co.com</td><td>Export</td><td>Q4 report</td></tr></tbody></table></div></div>
+                </div>
+
+                <div class="subpage-content" id="page-ropa"><div class="page-header"><h1 class="page-title">RoPA</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="ropa-main">Activities</button><button class="tab" data-tab="ropa-audit">Audit Trail</button></div></div><div class="tab-content active" id="ropa-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Processing Activities</h3><button class="btn-secondary"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export RoPA</button></div><table class="data-table"><thead><tr><th>Activity</th><th>Purpose</th><th>Legal Basis</th><th>Categories</th><th>Retention</th></tr></thead><tbody><tr><td>Account Mgmt</td><td>Service</td><td>Contract</td><td>Contact, Financial</td><td>7 years</td></tr><tr><td>Email Marketing</td><td>Marketing</td><td>Consent</td><td>Contact</td><td>Until withdrawal</td></tr></tbody></table></div></div><div class="tab-content" id="ropa-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-15</span></td><td>jane@co.com</td><td>Export</td><td>RoPA report</td></tr></tbody></table></div></div></div>
+
+                <div class="subpage-content" id="page-invite-users"><div class="page-header"><h1 class="page-title">Invite Users</h1></div><div class="tabs-container"><div class="tabs"><button class="tab active" data-tab="users-main">Users</button><button class="tab" data-tab="users-teams">Teams</button><button class="tab" data-tab="users-scopes">Scopes</button><button class="tab" data-tab="users-sso">SSO</button><button class="tab" data-tab="users-audit">Audit Trail</button></div></div><div class="tab-content active" id="users-main"><div class="panel"><div class="panel-header"><h3 class="panel-title">Team Members</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Invite</button></div><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody><tr><td>John Doe</td><td><span class="mono">john@co.com</span></td><td>Admin</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr><tr><td>Jane Smith</td><td><span class="mono">jane@co.com</span></td><td>Manager</td><td><span class="status-badge active"><span class="status-dot"></span>Active</span></td></tr></tbody></table></div></div><div class="tab-content" id="users-teams"><div class="panel"><div class="panel-header"><h3 class="panel-title">Teams</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create</button></div><table class="data-table"><thead><tr><th>Team</th><th>Members</th><th>Scopes</th><th>Created</th></tr></thead><tbody><tr><td>Privacy Ops</td><td>4</td><td>All</td><td>Oct 1</td></tr></tbody></table></div></div><div class="tab-content" id="users-scopes"><div class="panel"><div class="panel-header"><h3 class="panel-title">Scopes</h3><button class="btn-primary"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create</button></div><table class="data-table"><thead><tr><th>Scope</th><th>Description</th><th>Created</th></tr></thead><tbody><tr><td>global</td><td>Full access</td><td>Oct 1</td></tr><tr><td>limited_access</td><td>Access to select systems</td><td>Oct 1</td></tr></tbody></table></div></div><div class="tab-content" id="users-sso"><div class="panel"><div class="panel-header"><h3 class="panel-title">SSO Settings</h3></div><div class="settings-section"><div class="settings-section-title"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>SAML Configuration</div><div class="settings-grid"><div class="setting-item"><span class="setting-label">IdP Metadata URL</span><span class="setting-value">https://your.idp.com/metadata.xml</span></div><div class="setting-item"><span class="setting-label">SP Entity ID</span><span class="setting-value">transcend.io</span></div><div class="setting-item"><span class="setting-label">SAML Response Field</span><span class="setting-value">email</span></div></div></div><button class="btn-primary" style="margin-top:8px"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Save SSO Settings</button></div></div><div class="tab-content" id="users-audit"><div class="panel"><div class="panel-header"><h3 class="panel-title">Audit Trail</h3></div><table class="data-table"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody><tr><td><span class="mono">2026-01-16</span></td><td>admin@co.com</td><td>Invited</td><td>John Doe</td></tr></tbody></table></div></div></div>
+            </div>
+        </main>
+    </div>
+    <script>
+        document.querySelectorAll('.nav-section-header').forEach(h=>h.addEventListener('click',()=>h.closest('.nav-section').classList.toggle('collapsed')));
+        const navLinks=document.querySelectorAll('.nav-home-link,.nav-sub-link'),pages=document.querySelectorAll('.subpage-content'),bs=document.getElementById('breadcrumb-section'),bsep=document.getElementById('breadcrumb-separator'),bc=document.getElementById('breadcrumb-current');
+        document.querySelector('.invite-btn').addEventListener('click',()=>{navLinks.forEach(l=>l.classList.remove('active'));pages.forEach(p=>p.classList.remove('active'));document.getElementById('page-invite-users').classList.add('active');bs.textContent='Settings';bsep.style.display='inline';bc.style.display='inline';bc.textContent='Invite Users'});
+        navLinks.forEach(link=>link.addEventListener('click',e=>{e.preventDefault();navLinks.forEach(l=>l.classList.remove('active'));link.classList.add('active');const pageId=link.dataset.page;pages.forEach(p=>p.classList.remove('active'));const target=document.getElementById('page-'+pageId);if(target)target.classList.add('active');if(link.classList.contains('nav-home-link')){bs.textContent='Home';bsep.style.display='none';bc.style.display='none'}else{const section=link.closest('.nav-section');const sectionTitle=section.querySelector('.nav-section-header-content').textContent.trim();bs.textContent=sectionTitle;bsep.style.display='inline';bc.style.display='inline';bc.textContent=link.textContent.trim()}}));
+        document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{const container=tab.closest('.subpage-content');const tabId=tab.dataset.tab;container.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));container.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));tab.classList.add('active');const target=container.querySelector('#'+tabId);if(target)target.classList.add('active')}));
+    </script>
+</body>
+</html>
